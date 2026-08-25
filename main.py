@@ -208,7 +208,8 @@ opcoes_setup = [
     "3 >> Download Gaming Stuff",
     "4 >> Pinalto's Config",
     "5 >> irm https://christitus.com/win | iex",
-    "6 >> & ([scriptblock]::Create((irm https://debloat.raphi.re/)))"
+    "6 >> & ([scriptblock]::Create((irm https://debloat.raphi.re/)))",
+    "7 >> Create Desktop Shortcut"
 ]
 
 
@@ -236,6 +237,8 @@ def menu_setup():
             setup_menu.run_winutil()
         elif escolha == 6:
             setup_menu.raphi_debloat()
+        elif escolha == 7:
+            setup_menu.create_shortcut()
 
 
         clear_console()
