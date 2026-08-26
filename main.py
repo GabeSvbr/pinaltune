@@ -31,10 +31,15 @@ def ensure_admin():
         time.sleep(1.5)
 
 
+def confirmation():
+    answer = input("     \033[32mcontinue...\033[0m")
+    play_sound("Sounds\menu_back.wav")
+    
+
 ensure_admin()
 
 import Utilities_pin, windows_debloat, setup_menu, youtube_downloader, pinterest_downloader
-from Utilities_pin import bar, clear_console, get_option, confirmation
+from Utilities_pin import bar, clear_console, get_option
 
 
 version = "2.0"
@@ -195,9 +200,9 @@ def build_options():
         "1 >> Update Windows",
         "2 >> Setup Options",
         "3 >> Media",
-        "4 >> Test Sounds",
-        "5 >> List Machine Components",
-        "6 >> Refresh Windows Explorer",
+        "4 >> List Machine Components",
+        "5 >> Refresh Windows Explorer",
+        "6 >> Test Sounds",
         f"7 >> Volume ({volume}%)",
         "8 >> Shutdown",
         "9 >> Exit"
@@ -447,17 +452,17 @@ while True:
     elif choice == 3:
         media_menu_loop()
 
-    # Test Sounds
-    elif choice == 4:
-        test_sounds_menu()
 
     # List Machine Components
-    elif choice == 5:
+    elif choice == 4:
         get_info()
 
     # Refresh Windows Explorer
-    elif choice == 6:
+    elif choice == 5:
         Utilities_pin.restart_explorer()
+    # Test Sounds
+    elif choice == 6:
+        test_sounds_menu()
 
     # Volume
     elif choice == 7:
