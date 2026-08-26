@@ -346,8 +346,6 @@ def update():
     bar()
     cmd = (
         'winget upgrade --all --silent --accept-source-agreements --accept-package-agreements && '
-        'DISM /Online /Cleanup-Image /StartComponentCleanup /ResetBase && '
-        'cleanmgr /sagerun:1'
     )
     try:
         subprocess.run(cmd, shell=True, check=True)
