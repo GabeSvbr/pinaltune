@@ -13,6 +13,18 @@ def set_reg(hive,path,name,tipo,valor):
     except OSError as e: print(f"Falha ao gravar {name} em {path}: {e}")
     return False
 
+#       "ls" poweshell shortcut
+
+def create_ls_shortcut():
+    log("Creating 'ls' shortcut for PowerShell")
+    if not ctypes.windll.shell32.IsUserAnAdmin():
+        print("Execute como Administrador."); return
+    ps_path = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+    set_reg(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\ls.exe", "", winreg.REG_SZ, ps_path)
+    ps_path = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+    set_reg(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\ps.exe", "", winreg.REG_SZ, ps_path)
+
+
 #       Restart Explorer
 
 def restart_explorer():
@@ -223,11 +235,10 @@ def lockscreen(url):
         print(f"Erro: {e}")
 
 
-
 def main_auto_install():
     clear_console(); log("It is advised NOT to interact with the terminal until process is finished.")
-    debloat_windows();  align_taskbar_left();   clear_taskbar(); power_plan_high_performance ();    enable_dark_mode(); reset_pins();   disable_widgets_and_search_box();   disable_startup_delay()
-    reset_pins();   enable_end_task();  disable_telemetry();    show_file_extensions(); restart_explorer() 
+    create_ls_shortcut(); align_taskbar_left();   clear_taskbar(); power_plan_high_performance ();    enable_dark_mode(); reset_pins();   disable_widgets_and_search_box();   disable_startup_delay()
+    reset_pins();   enable_end_task();    show_file_extensions(); restart_explorer() 
     log("Process Finished!"); confirmation()
 
 def download_and_apply_wallpaper(url):
@@ -238,67 +249,9 @@ def download_and_apply_wallpaper(url):
     urllib.request.urlretrieve(url,wp)
     ctypes.windll.user32.SystemParametersInfoW(20,0,wp,3)
 
-def menu_manual():
-    clear_console()
-
-    print(f"\033[1;38;2;124;77;255m  ----< {time.strftime('%H:%M')} >----< Pinalto's Windows Manager >-------\033[0m")
-    bar()
-
-    print("\033[1m |  \033[1;38;2;124;77;255m1  ➜ \033[0m \033[1;38;2;216;200;255m    Align Taskbar Left\033[0m                       |")
-    print("\033[1m |  \033[1;38;2;124;77;255m2  ➜ \033[0m \033[1;38;2;216;200;255m    Clear Taskbar\033[0m                            |")
-    print("\033[1m |  \033[1;38;2;124;77;255m3  ➜ \033[0m \033[1;38;2;216;200;255m    Power Plan High Performance\033[0m              |")
-    print("\033[1m |  \033[1;38;2;124;77;255m4  ➜ \033[0m \033[1;38;2;216;200;255m    Enable Dark Mode\033[0m                         |")
-    print("\033[1m |  \033[1;38;2;124;77;255m5  ➜ \033[0m \033[1;38;2;216;200;255m    Reset Pins\033[0m                               |")
-    print("\033[1m |  \033[1;38;2;124;77;255m6  ➜ \033[0m \033[1;38;2;216;200;255m    Disable Widgets and Search Box\033[0m           |")
-    print("\033[1m |  \033[1;38;2;124;77;255m7  ➜ \033[0m \033[1;38;2;216;200;255m    Disable Startup Delay\033[0m                    |")
-    print("\033[1m |  \033[1;38;2;124;77;255m8  ➜ \033[0m \033[1;38;2;216;200;255m    Enable End Task\033[0m                          |")
-    print("\033[1m |  \033[1;38;2;124;77;255m9  ➜ \033[0m \033[1;38;2;216;200;255m    Disable Telemetry\033[0m                        |")
-    print("\033[1m |  \033[1;38;2;124;77;255m10 ➜ \033[0m \033[1;38;2;216;200;255m    Show File Extensions\033[0m                     |")
-    print("\033[1m |  \033[1;38;2;124;77;255m11 ➜ \033[0m \033[1;38;2;216;200;255m    Restart Explorer\033[0m                         |")
-    print("\033[1m |  \033[1;38;2;124;77;255m12 ➜ \033[0m \033[1;38;2;216;200;255m    Debloat Windows\033[0m                          |")
-    print("\033[1m |  \033[1;38;2;255;107;107m0  ➜ \033[0m \033[1;38;2;255;107;107m0 - Exit\033[0m                                     |")
-
-    bar()
-
-def main_manual_instalation():
-
-    while True:
-        menu_manual()
-        option = get_option()
-        if option == 1:
-            align_taskbar_left()
-        elif option == 2:
-            clear_taskbar()
-        elif option == 3:
-            power_plan_high_performance()
-        elif option == 4:
-            enable_dark_mode()
-        elif option == 5:
-            reset_pins()
-        elif option == 6:
-            disable_widgets_and_search_box()
-        elif option == 7:
-            disable_startup_delay()
-        elif option == 8:
-            enable_end_task()
-        elif option == 9:
-            disable_telemetry()
-        elif option == 10:
-            show_file_extensions()
-        elif option == 11:
-            restart_explorer()
-        elif option == 12:
-            debloat_windows()
-        elif option == 0:
-            break
-        else:
-            print("Opção inválida!")
-            time.sleep(0.8)
-
-
 def update():
-    t = time.time()
 
+    t = time.time()
     print(
         "\n\033[1;38;2;124;77;255m"
         "                  --- Updating ---"
@@ -326,19 +279,6 @@ def update():
         f"{time.time() - t:.4f}\033[0m"
     )
 
-def main():
-    print("1 automatico (sem o windows debloat)")
-    print("2 manual")
-    print("3 update teste")
-    opc = input("OPC:")
-    if opc == "1":
-        main_auto_install()
-    elif opc == "2":
-        main_manual_instalation()
-    elif opc == "3":
-        update()
-    else:
-        print("Taylor Swift")
 
 
 
