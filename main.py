@@ -1,95 +1,95 @@
-import os, time, msvcrt,winsound,subprocess, sys, ctypes
+import os, time, msvcrt, winsound, subprocess, sys, ctypes
 
-# A pasta 'scripts' fica ao lado deste arquivo (ou dentro do .exe empacotado)
+# The 'scripts' folder sits next to this file (or inside the packaged .exe)
 _BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(_BASE_DIR, "scripts"))
 
 
 def ensure_admin():
-    """Garante que o programa sempre rode como Administrador.
-    Se não estiver elevado, reabre a si mesmo pedindo o UAC e encerra esta instância."""
+    """Makes sure the program always runs as Administrator.
+    If it isn't elevated, it relaunches itself asking for UAC and closes this instance."""
     try:
-        eh_admin = ctypes.windll.shell32.IsUserAnAdmin()
+        is_admin = ctypes.windll.shell32.IsUserAnAdmin()
     except Exception:
-        eh_admin = False
+        is_admin = False
 
-    if eh_admin:
+    if is_admin:
         return
 
     params = " ".join(f'"{arg}"' for arg in sys.argv)
-    resultado = ctypes.windll.shell32.ShellExecuteW(
+    result = ctypes.windll.shell32.ShellExecuteW(
         None, "runas", sys.executable, params, None, 1
     )
 
-    if resultado > 32:
-        # UAC aceito: a instância elevada já foi aberta, encerra esta aqui
+    if result > 32:
+        # UAC accepted: the elevated instance was already opened, close this one
         sys.exit()
     else:
-        # Usuário clicou "Não" no UAC (ou falhou por outro motivo)
-        print("\033[1;31m[aviso] Elevação para Administrador cancelada/negada.\033[0m")
-        print("\033[1;31m         Algumas funções podem falhar sem privilégios de admin.\033[0m")
+        # User clicked "No" on UAC (or it failed for another reason)
+        print("\033[1;31m[warning] Elevation to Administrator canceled/denied.\033[0m")
+        print("\033[1;31m         Some functions may fail without admin privileges.\033[0m")
         time.sleep(1.5)
 
 
 ensure_admin()
 
-import Utilities_pin,  windows_debloat , setup_menu
-from Utilities_pin import bar, clear_console, get_option,confirmation
+import Utilities_pin, windows_debloat, setup_menu, youtube_downloader, pinterest_downloader
+from Utilities_pin import bar, clear_console, get_option, confirmation
 
 
 version = "2.0"
 
-volume = 40  # volume padrão (%)
+volume = 40  # default volume (%)
 
 
 def resource_path(relative_path):
-    """Resolve o caminho tanto rodando o .py quanto o .exe empacotado (PyInstaller)."""
+    """Resolve the path whether running the .py or the packaged .exe (PyInstaller)."""
     return os.path.join(_BASE_DIR, relative_path)
 
 
 def set_system_volume(percent):
-    """Ajusta o volume de saída de áudio do Windows (0-100%)."""
+    """Adjusts Windows audio output volume (0-100%)."""
     global volume
     percent = max(0, min(100, percent))
     volume = percent
-    nivel = int(percent / 100 * 0xFFFF)
-    combinado = nivel | (nivel << 16)
+    level = int(percent / 100 * 0xFFFF)
+    combined = level | (level << 16)
     try:
-        ctypes.windll.winmm.waveOutSetVolume(0, combinado)
+        ctypes.windll.winmm.waveOutSetVolume(0, combined)
     except Exception as e:
-        print(f"\033[1;31m[aviso] não foi possível ajustar o volume: {e}\033[0m")
+        print(f"\033[1;31m[warning] could not adjust volume: {e}\033[0m")
 
 
-def ajustar_volume_relativo(delta):
+def adjust_volume_relative(delta):
     set_system_volume(volume + delta)
 
 
-def ajustar_volume():
+def adjust_volume():
     clear_console()
     bar()
-    print(f"\033[1;38;2;124;77;255m --> Volume atual: {volume}%\033[0m")
-    print(" \033[1;34mDigite o novo volume (0-100) ou ENTER para cancelar:\033[0m")
+    print(f"\033[1;38;2;124;77;255m --> Current volume: {volume}%\033[0m")
+    print(" \033[1;34mEnter the new volume (0-100) or ENTER to cancel:\033[0m")
     bar()
-    entrada = input("    Volume: ").strip()
-    if entrada == "":
+    entry = input("    Volume: ").strip()
+    if entry == "":
         return
     try:
-        novo = int(entrada)
+        new_volume = int(entry)
     except ValueError:
-        print("\033[31mValor inválido.\033[0m")
+        print("\033[31mInvalid value.\033[0m")
         time.sleep(0.8)
         return
-    if not (0 <= novo <= 100):
-        print("\033[31mO volume deve estar entre 0 e 100.\033[0m")
+    if not (0 <= new_volume <= 100):
+        print("\033[31mVolume must be between 0 and 100.\033[0m")
         time.sleep(0.8)
         return
-    set_system_volume(novo)
-    print(f"\033[1;92mVolume ajustado para {volume}%\033[0m")
+    set_system_volume(new_volume)
+    print(f"\033[1;92mVolume set to {volume}%\033[0m")
     time.sleep(0.6)
 
 
 # =========================
-# FUNÇÕES
+# FUNCTIONS
 # =========================
 
 
@@ -112,97 +112,99 @@ def intro():
 
 
 def play_sound(path):
-    caminho = resource_path(path)
-    if not os.path.exists(caminho):
-        print(f"\033[1;31m[aviso] som não encontrado: {caminho}\033[0m")
+    path_full = resource_path(path)
+    if not os.path.exists(path_full):
+        print(f"\033[1;31m[warning] sound not found: {path_full}\033[0m")
         return
     try:
         winsound.PlaySound(
-            caminho,
+            path_full,
             winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NODEFAULT
         )
     except Exception as e:
-        print(f"\033[1;31m[aviso] falha ao tocar som ({caminho}): {e}\033[0m")
+        print(f"\033[1;31m[warning] failed to play sound ({path_full}): {e}\033[0m")
 
 
-def menu(titulo, opcoes):
-    selecionada = 1
+def menu(title, options):
+    selected = 1
 
     while True:
-        lista = opcoes() if callable(opcoes) else opcoes
+        items = options() if callable(options) else options
 
         clear_console()
 
-        print(f"\033[1;38;2;124;77;255m{titulo}\033[0m\n")
+        print(f"\033[1;38;2;124;77;255m{title}\033[0m\n")
 
-        for i, opcao in enumerate(lista, 1):
-            if i == selecionada:
-                if "Shutdown" in opcao:
-                    print(f"        \033[1;38;2;255;0;0m➜ {opcao}\033[0m")
-                elif "Sair" in opcao:
-                    print(f"        \033[1;38;2;255;0;0m➜ {opcao}\033[0m")
+        for i, option in enumerate(items, 1):
+            if i == selected:
+                if "Shutdown" in option:
+                    print(f"        \033[1;38;2;255;0;0m➜ {option}\033[0m")
+                elif "Exit" in option:
+                    print(f"        \033[1;38;2;255;0;0m➜ {option}\033[0m")
                 else:
-                    print(f"        \033[1;38;2;124;77;255m➜ {opcao}\033[0m")
+                    print(f"        \033[1;38;2;124;77;255m➜ {option}\033[0m")
             else:
-                print(f"    {opcao}")
+                print(f"    {option}")
 
-        tecla = msvcrt.getch()
+        key = msvcrt.getch()
 
-        if tecla == b'\xe0':
-            tecla = msvcrt.getch()
+        if key == b'\xe0':
+            key = msvcrt.getch()
 
-            if tecla == b'H':
-                play_sound(r"Sounds/V3_SE_367 (1).wav")
-                selecionada -= 1
+            if key == b'H':
+                play_sound(r"Sounds/menu_down_up.wav")
+                selected -= 1
 
-            elif tecla == b'P':
-                play_sound(r"Sounds/V3_SE_367 (1).wav")
-                selecionada += 1
+            elif key == b'P':
+                play_sound(r"Sounds/menu_down_up.wav")
+                selected += 1
 
-            elif tecla == b'K':  # seta esquerda
-                if "Volume" in lista[selecionada - 1]:
-                    ajustar_volume_relativo(-10)
-                    play_sound(r"Sounds/V3_SE_367 (1).wav")
+            elif key == b'K':  # left arrow
+                if "Volume" in items[selected - 1]:
+                    adjust_volume_relative(-10)
+                    play_sound(r"Sounds/menu_down_up.wav")
 
-            elif tecla == b'M':  # seta direita
-                if "Volume" in lista[selecionada - 1]:
-                    ajustar_volume_relativo(10)
-                    play_sound(r"Sounds/V3_SE_367 (1).wav")
+            elif key == b'M':  # right arrow
+                if "Volume" in items[selected - 1]:
+                    adjust_volume_relative(10)
+                    play_sound(r"Sounds/menu_down_up.wav")
 
-        elif tecla in b'123456789':
-            numero = int(tecla.decode())
+        elif key in b'123456789':
+            number = int(key.decode())
 
-            if numero <= len(lista):
-                selecionada = numero
+            if number <= len(items):
+                selected = number
 
-        elif tecla == b'\r':
-            play_sound(r"Sounds/V3_SE_368 (1).wav")
-            return selecionada
+        elif key == b'\r':
+            play_sound(r"Sounds/select.wav")
+            return selected
 
-        elif tecla in (b'\x1b', b'\x08'):
-            play_sound("Sounds/V3_SE_339.wav")
+        elif key in (b'\x1b', b'\x08'):
+            play_sound("Sounds/menu_back.wav")
             return None
 
-        selecionada = (selecionada - 1) % len(lista) + 1
+        selected = (selected - 1) % len(items) + 1
 
 
 # =========================
 # MENUS
 # =========================
 
-def build_opcoes():
+def build_options():
     return [
         "1 >> Update Windows",
         "2 >> Setup Options",
-        "3 >> List Machine Components",
-        "4 >> Refresh Windows Explorer",
-        f"5 >> Volume ({volume}%)",
-        "6 >> Shutdown",
-        "7 >> Sair"
+        "3 >> Media",
+        "4 >> Test Sounds",
+        "5 >> List Machine Components",
+        "6 >> Refresh Windows Explorer",
+        f"7 >> Volume ({volume}%)",
+        "8 >> Shutdown",
+        "9 >> Exit"
     ]
 
 
-opcoes_setup = [
+setup_options = [
     "1 >> Download Utilitaries",
     "2 >> Download Worktools",
     "3 >> Download Gaming Stuff",
@@ -212,39 +214,129 @@ opcoes_setup = [
     "7 >> Create Desktop Shortcut"
 ]
 
+media_options = [
+    "1 >> Download YouTube Video",
+    "2 >> Download Pinterest Image (High Res)"
+]
 
-def menu_setup():
+sound_files = [
+    "menu_in.wav",
+    "Sounds_dots.wav",
+    "v_cut.wav",
+    "menu_back.wav",
+    "intro_load.wav",
+    "menu_down_up.wav",
+    "select.wav",
+    "completion.wav",
+]
+
+
+def silent_menu(title, options):
+    """Same navigation as menu(), but stays silent while moving the selection.
+    Enter returns the selected index (menu stays open); Esc/Backspace returns None."""
+    selected = 1
+
+    while True:
+        items = options() if callable(options) else options
+
+        clear_console()
+
+        print(f"\033[1;38;2;124;77;255m{title}\033[0m\n")
+
+        for i, option in enumerate(items, 1):
+            if i == selected:
+                print(f"        \033[1;38;2;124;77;255m➜ {option}\033[0m")
+            else:
+                print(f"    {option}")
+
+        key = msvcrt.getch()
+
+        if key == b'\xe0':
+            key = msvcrt.getch()
+            if key == b'H':
+                selected -= 1
+            elif key == b'P':
+                selected += 1
+
+        elif key in b'123456789':
+            number = int(key.decode())
+            if number <= len(items):
+                selected = number
+
+        elif key == b'\r':
+            return selected
+
+        elif key in (b'\x1b', b'\x08'):
+            return None
+
+        selected = (selected - 1) % len(items) + 1
+
+
+def setup_menu_loop():
 
     while True:
 
-        escolha = menu(
+        choice = menu(
             "----< Setup Menu >----",
-            opcoes_setup
+            setup_options
         )
 
         # ESC
-        if escolha is None:
+        if choice is None:
             return
-        elif escolha == 1:
+        elif choice == 1:
             setup_menu.download_utilitaries()
-        elif escolha == 2:
+        elif choice == 2:
             setup_menu.download_worktools()
-        elif escolha == 3:
+        elif choice == 3:
             setup_menu.download_gaming()
-        elif escolha == 4:
+        elif choice == 4:
             setup_menu.pinalto_configs()
-        elif escolha == 5:
+        elif choice == 5:
             setup_menu.run_winutil()
-        elif escolha == 6:
+        elif choice == 6:
             setup_menu.raphi_debloat()
-        elif escolha == 7:
+        elif choice == 7:
             setup_menu.create_shortcut()
 
 
         clear_console()
-        print(f"Você escolheu: {opcoes_setup[escolha - 1]}")
+        print(f"You chose: {setup_options[choice - 1]}")
         confirmation()
 
+
+def test_sounds_menu():
+    options = [f"{i} >> {name}" for i, name in enumerate(sound_files, 1)]
+
+    while True:
+        choice = silent_menu(
+            "----< Test Sounds (Enter plays, Esc exits) >----",
+            options
+        )
+
+        # ESC
+        if choice is None:
+            return
+
+        play_sound(f"Sounds/{sound_files[choice - 1]}")
+
+
+def media_menu_loop():
+
+    while True:
+
+        choice = menu(
+            "----< Media Menu >----",
+            media_options
+        )
+
+        # ESC
+        if choice is None:
+            return
+        elif choice == 1:
+            youtube_downloader.youtube_download()
+        elif choice == 2:
+            pinterest_downloader.pinterest_download()
 
 
 def update():
@@ -261,87 +353,127 @@ def update():
         subprocess.run(cmd, shell=True, check=True)
         print("[ok] update + cleanup")
     except subprocess.CalledProcessError:
-        print("[erro] update + cleanup")
+        print("[error] update + cleanup")
     bar()
     print(f"\033[1;93mElapsed time: {time.time() - t:.4f}\033[0m")
     bar()
     
 
-
 def get_info():
-    clear_console()
-    print(subprocess.getoutput("powershell -Command Get-ComputerInfo"))
-    confirmation()
 
+    clear_console()
+    print("Loading...")
+    time.sleep(0.8)
+
+
+    play_sound("Sounds\completion.wav")
+    clear_console()
+    print("[1;38;2;124;77;255m                  --- FASTFETCH ---                          [0m")
+    bar()
+
+    try:
+        result = subprocess.run(
+            [
+                "fastfetch",
+                "--structure-disabled",
+                "locale:battery:terminalfont:terminal:wmtheme:wm:shell:packages:de:colors"
+            ],
+            capture_output=True,
+            text=True,
+            shell=False
+        )
+
+        if result.returncode == 0:
+            print(result.stdout)
+        else:
+            print("[1;31m[error] Fastfetch could not be executed.[0m")
+            print("Make sure Fastfetch is installed and available in PATH.")
+            if result.stderr:
+                print(result.stderr)
+    except FileNotFoundError:
+        print("[1;31m[error] Fastfetch is not installed or is not in PATH.[0m")
+        print("[1;33mInstall it with:[0m")
+        print("    winget install fastfetch")
+
+    bar()
+    confirmation()
 
 def shutdown():
     clear_console()
-    print("\033[1;38;2;255;0;0mDesligando o computador...\033[0m")
+    print("\033[1;38;2;255;0;0mShutting down the computer...\033[0m")
     os.system("shutdown /s /f /t 0")
 
 
 def refresh_explorer():
     clear_console()
-    print("Reiniciando o Windows Explorer...")
+    print("Restarting Windows Explorer...")
     subprocess.run("taskkill /f /im explorer.exe", shell=True)
     subprocess.Popen("explorer.exe", shell=True)
-    print("Feito!")
+    print("Done!")
     confirmation()
 
 
 # =========================
-# MENU PRINCIPAL
+# MAIN MENU
 # =========================
 
-set_system_volume(volume)  # aplica o volume padrão (70%) ao iniciar
-play_sound("Sounds\V3_SE_341.wav")
+set_system_volume(volume)  # applies the default volume on startup
+play_sound("Sounds\\intro_load.wav")
 intro()
-play_sound("Sounds\HS_SE_110.wav")
+play_sound("Sounds\\menu_in.wav")
 
 while True:
 
-    escolha = menu(
+    choice = menu(
         "----< Pinalto's Windows Manager >----",
-        build_opcoes
+        build_options
     )
 
     # ESC
-    if escolha is None:
+    if choice is None:
         break
 
-    # Sair
-    if escolha == 7:
+    # Exit
+    if choice == 9:
         break
 
     # Update Windows
-    elif escolha == 1:
+    elif choice == 1:
         Utilities_pin.update_windows()
 
     # Setup Options
-    elif escolha == 2:
-        menu_setup()
+    elif choice == 2:
+        setup_menu_loop()
+
+    # Media
+    elif choice == 3:
+        media_menu_loop()
+
+    # Test Sounds
+    elif choice == 4:
+        test_sounds_menu()
 
     # List Machine Components
-    elif escolha == 3:
-        Utilities_pin.list_components()
+    elif choice == 5:
+        get_info()
 
     # Refresh Windows Explorer
-    elif escolha == 4:
-        Utilities_pin.reiniciar_explorer()
+    elif choice == 6:
+        Utilities_pin.restart_explorer()
 
     # Volume
-    elif escolha == 5:
-        ajustar_volume()
+    elif choice == 7:
+        adjust_volume()
 
     # Shutdown
-    elif escolha == 6:
+    elif choice == 8:
         Utilities_pin.shutdown()
 
-    # Outras opções (Info, etc.)
+    # Other options (Info, etc.)
     else:
 
         clear_console()
 
-        print(f"Você escolheu: {build_opcoes()[escolha - 1]}")
+        print(f"You chose: {build_options()[choice - 1]}")
 
         confirmation()
