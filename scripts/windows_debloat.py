@@ -1,24 +1,24 @@
-import ctypes, os, subprocess, time , winreg , sys, ctypes
-from Utilities_pin import bar, clear_console, get_option,confirmation
+import ctypes, os, subprocess, time, winreg, sys, shutil, urllib.request
+from Utilities_pin import bar, clear_console, get_option, confirmation, play_completion
 
 
 #   CUSTOM WINDOWS SETUP (Commercial and Private)
 
 def log(m): print(f"\033[1;38;2;124;77;255m>>\033[1;38;2;255;105;180m {m}\033[0m")
 
-def set_reg(hive,path,name,tipo,valor):
+def set_reg(hive, path, name, value_type, value):
     try:
-        k=winreg.CreateKeyEx(hive,path,0,winreg.KEY_ALL_ACCESS);winreg.SetValueEx(k,name,0,tipo,valor);winreg.CloseKey(k);return True
-    except PermissionError: print(f"Sem permissão para gravar {name} em {path}")
-    except OSError as e: print(f"Falha ao gravar {name} em {path}: {e}")
+        k = winreg.CreateKeyEx(hive, path, 0, winreg.KEY_ALL_ACCESS); winreg.SetValueEx(k, name, 0, value_type, value); winreg.CloseKey(k); return True
+    except PermissionError: print(f"No permission to write {name} to {path}")
+    except OSError as e: print(f"Failed to write {name} to {path}: {e}")
     return False
 
-#       "ls" poweshell shortcut
+#       "ls" powershell shortcut
 
 def create_ls_shortcut():
     log("Creating 'ls' shortcut for PowerShell")
     if not ctypes.windll.shell32.IsUserAnAdmin():
-        print("Execute como Administrador."); return
+        print("Run as Administrator."); return
     ps_path = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
     set_reg(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\ls.exe", "", winreg.REG_SZ, ps_path)
     ps_path = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
@@ -114,17 +114,17 @@ def disable_widgets_and_search_box():
     log("Disabling Windows Widgets")
     log("Disabling Search Box")
     try:
-        chave_path = r"SOFTWARE\Policies\Microsoft\Dsh"
-        chave = winreg.CreateKeyEx(winreg.HKEY_LOCAL_MACHINE, chave_path, 0, winreg.KEY_WRITE)
-        winreg.SetValueEx(chave, "AllowNewsAndInterests", 0, winreg.REG_DWORD, 0)
-        winreg.CloseKey(chave)
+        key_path = r"SOFTWARE\Policies\Microsoft\Dsh"
+        key = winreg.CreateKeyEx(winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_WRITE)
+        winreg.SetValueEx(key, "AllowNewsAndInterests", 0, winreg.REG_DWORD, 0)
+        winreg.CloseKey(key)
     except Exception as e:
         pass
     try:
-        chave_path_user = r"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
-        chave = winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, chave_path_user, 0, winreg.KEY_WRITE)
-        winreg.SetValueEx(chave, "TaskbarDa", 0, winreg.REG_DWORD, 0)
-        winreg.CloseKey(chave)
+        key_path_user = r"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
+        key = winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, key_path_user, 0, winreg.KEY_WRITE)
+        winreg.SetValueEx(key, "TaskbarDa", 0, winreg.REG_DWORD, 0)
+        winreg.CloseKey(key)
     except Exception as e:
         pass
 
@@ -158,7 +158,7 @@ def enable_dark_mode():
 #       Disable Windows Telemetry
 
 def disable_telemetry():
-    log("Disabling Telemtry")
+    log("Disabling Telemetry")
     set_reg(winreg.HKEY_LOCAL_MACHINE,r"SOFTWARE\Policies\Microsoft\Windows\DataCollection","AllowTelemetry",winreg.REG_DWORD,0)
     ps="""Set-Service -Name DiagTrack -StartupType Disabled -ErrorAction SilentlyContinue
     Stop-Service -Name DiagTrack -Force -ErrorAction SilentlyContinue
@@ -172,8 +172,8 @@ def clear_taskbar():
     log("Cleaning Taskbar")
     ps=r'''$shell=New-Object -ComObject Shell.Application
     $apps=$shell.Namespace("shell:::{4234d49b-0245-4df3-b780-3893943456e1}").Items()
-    $manter=@("File Explorer","Files","Explorador de Arquivos","Configurações","Terminal","Helium","Steam","Discord","VS Code","Kate")
-    foreach($item in $apps){if($manter -contains $item.Name){$item.InvokeVerb("taskbarpin")}else{$item.InvokeVerb("taskbarunpin")}}'''
+    $keep=@("File Explorer","Explorador de Arquivos","Files","Settings","Configurações","Terminal","Helium","Steam","Discord","VS Code","Kate")
+    foreach($item in $apps){if($keep -contains $item.Name){$item.InvokeVerb("taskbarpin")}else{$item.InvokeVerb("taskbarunpin")}}'''
     subprocess.run(["powershell","-NoProfile","-ExecutionPolicy","Bypass","-Command",ps])
 
 #       Set power plan to high performance
@@ -210,11 +210,9 @@ def reset_pins():
     rm_key(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\CloudStore")
 
 
-import os, ctypes, shutil, urllib.request, winreg
-
 def lockscreen(url):
     if not ctypes.windll.shell32.IsUserAnAdmin():
-        print("Execute como Administrador."); return
+        print("Run as Administrator."); return
 
     url = url.replace("https://github.com/", "https://raw.githubusercontent.com/").replace("/blob/", "/")
     path = r"C:\Windows\Web\Screen\lockscreen_custom.png"
@@ -230,14 +228,15 @@ def lockscreen(url):
         winreg.SetValueEx(key, "LockScreenImageStatus", 0, winreg.REG_DWORD, 1)
         winreg.CloseKey(key)
 
-        print("Lockscreen aplicada!")
+        print("Lockscreen applied!")
+        play_completion()
     except Exception as e:
-        print(f"Erro: {e}")
+        print(f"Error: {e}")
 
 
 def main_auto_install():
     clear_console(); log("It is advised NOT to interact with the terminal until process is finished.")
-    create_ls_shortcut(); align_taskbar_left();   clear_taskbar(); power_plan_high_performance ();    enable_dark_mode(); reset_pins();   disable_widgets_and_search_box();   disable_startup_delay()
+    create_ls_shortcut(); align_taskbar_left(); power_plan_high_performance ();    enable_dark_mode(); reset_pins();   disable_widgets_and_search_box();   disable_startup_delay()
     reset_pins();   enable_end_task();    show_file_extensions(); restart_explorer() 
     log("Process Finished!"); confirmation()
 
@@ -248,6 +247,7 @@ def download_and_apply_wallpaper(url):
     wp=os.path.join(os.environ["TEMP"],"wallpaper.jpg")
     urllib.request.urlretrieve(url,wp)
     ctypes.windll.user32.SystemParametersInfoW(20,0,wp,3)
+    play_completion()
 
 def update():
 
@@ -278,12 +278,3 @@ def update():
         f"\033[1;93mElapsed time: "
         f"{time.time() - t:.4f}\033[0m"
     )
-
-
-
-
-
-
-
-
-    
