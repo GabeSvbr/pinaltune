@@ -38,7 +38,7 @@ def confirmation():
 
 ensure_admin()
 
-import Utilities_pin, windows_debloat, setup_menu, youtube_downloader, pinterest_downloader
+import Utilities_pin, windows_debloat, setup_menu, youtube_downloader, pinterest_downloader, ani_cli
 from Utilities_pin import bar, clear_console, get_option
 
 
@@ -100,7 +100,7 @@ def adjust_volume():
 
 
 def bar():
-    print("\033[1;38;2;124;77;255m" + "-" * 60 + "\033[0m")
+    print("\033[1;38;2;124;77;255m" + "-" * 120 + "\033[0m")
 
 
 def intro():
@@ -202,10 +202,9 @@ def build_options():
         "3 >> Media",
         "4 >> List Machine Components",
         "5 >> Refresh Windows Explorer",
-        "6 >> Test Sounds",
-        f"7 >> Volume ({volume}%)",
-        "8 >> Shutdown",
-        "9 >> Exit"
+        f"6 >> Volume ({volume}%)",
+        "7 >> Shutdown",
+        "8 >> Exit"
     ]
 
 
@@ -216,12 +215,15 @@ setup_options = [
     "4 >> Pinalto's Config",
     "5 >> irm https://christitus.com/win | iex",
     "6 >> & ([scriptblock]::Create((irm https://debloat.raphi.re/)))",
-    "7 >> Create Desktop Shortcut"
+    "7 >> Create Desktop Shortcut",
+    "8 >> Install/Manage ani-cli",
+    "9 >> Test Sounds"
 ]
 
 media_options = [
-    "1 >> Download YouTube Video",
-    "2 >> Download Pinterest Image (High Res)"
+    "1 >> ani-cli",
+    "2 >> Download YouTube Video",
+    "3 >> Download Pinterest Image (High Res)"
 ]
 
 sound_files = [
@@ -303,7 +305,12 @@ def setup_menu_loop():
             setup_menu.raphi_debloat()
         elif choice == 7:
             setup_menu.create_shortcut()
-
+        elif choice == 8:
+            ani_cli.run_ani_cli()
+            continue
+        elif choice == 9:
+            test_sounds_menu()
+            continue
 
         clear_console()
         print(f"You chose: {setup_options[choice - 1]}")
@@ -339,8 +346,10 @@ def media_menu_loop():
         if choice is None:
             return
         elif choice == 1:
-            youtube_downloader.youtube_download()
+            ani_cli.open_ani_cli()
         elif choice == 2:
+            youtube_downloader.youtube_download()
+        elif choice == 3:
             pinterest_downloader.pinterest_download()
 
 
@@ -353,14 +362,14 @@ def update():
         'winget upgrade --all --silent --accept-source-agreements --accept-package-agreements && '
     )
     try:
-        subprocess.run(cmd, shell=True, check=True)
-        print("[ok] update + cleanup")
+        subprocess.run(cmd)
+        print("[ok] update")
     except subprocess.CalledProcessError:
-        print("[error] update + cleanup")
+        print("[error] update")
     bar()
     print(f"\033[1;93mElapsed time: {time.time() - t:.4f}\033[0m")
     bar()
-    
+    confirmation()
 
 def get_info():
 
@@ -437,12 +446,12 @@ while True:
         break
 
     # Exit
-    if choice == 9:
+    if choice == 8:
         break
 
     # Update Windows
     elif choice == 1:
-        Utilities_pin.update_windows()
+        update()
 
     # Setup Options
     elif choice == 2:
@@ -452,7 +461,6 @@ while True:
     elif choice == 3:
         media_menu_loop()
 
-
     # List Machine Components
     elif choice == 4:
         get_info()
@@ -460,16 +468,13 @@ while True:
     # Refresh Windows Explorer
     elif choice == 5:
         Utilities_pin.restart_explorer()
-    # Test Sounds
-    elif choice == 6:
-        test_sounds_menu()
 
     # Volume
-    elif choice == 7:
+    elif choice == 6:
         adjust_volume()
 
     # Shutdown
-    elif choice == 8:
+    elif choice == 7:
         Utilities_pin.shutdown()
 
     # Other options (Info, etc.)

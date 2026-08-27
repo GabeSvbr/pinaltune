@@ -115,8 +115,6 @@ def update_windows():
     print("\n\033[1;38;2;124;77;255m                  --- Updating ---                          \033[0m");        bar()
     cmd = (
         'winget upgrade --all --silent --accept-source-agreements --accept-package-agreements && '
-        'DISM /Online /Cleanup-Image /StartComponentCleanup /ResetBase && '
-        'cleanmgr /sagerun:1'
     )
 
     try:
