@@ -1,5 +1,9 @@
 import os, time, msvcrt, winsound, subprocess, sys, ctypes
 
+version = "2.1"
+
+os.system(f"title Pinaltune v{version}")
+
 # The 'scripts' folder sits next to this file (or inside the packaged .exe)
 _BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(_BASE_DIR, "scripts"))
@@ -38,11 +42,12 @@ def confirmation():
 
 ensure_admin()
 
-import Utilities_pin, windows_debloat, setup_menu, youtube_downloader, pinterest_downloader, ani_cli
-from Utilities_pin import bar, clear_console, get_option
+import windows_debloat, setup_menu, youtube_downloader, pinterest_downloader, ani_cli
 
 
-version = "2.0"
+def clear_console():
+    os.system("cls" if os.name == "nt" else "clear")
+
 
 volume = 40  # default volume (%)
 
@@ -142,7 +147,7 @@ def menu(title, options):
 
         for i, option in enumerate(items, 1):
             if i == selected:
-                if "Shutdown" in option:
+                if "Shutdown /s /f /t 0" in option:
                     print(f"        \033[1;38;2;255;0;0m➜ {option}\033[0m")
                 elif "Exit" in option:
                     print(f"        \033[1;38;2;255;0;0m➜ {option}\033[0m")
@@ -168,11 +173,17 @@ def menu(title, options):
                 if "Volume" in items[selected - 1]:
                     adjust_volume_relative(-10)
                     play_sound(r"Sounds/menu_down_up.wav")
+                else:
+                    play_sound(r"Sounds/menu_back.wav")
+                    return None
 
             elif key == b'M':  # right arrow
                 if "Volume" in items[selected - 1]:
                     adjust_volume_relative(10)
                     play_sound(r"Sounds/menu_down_up.wav")
+                else:
+                    play_sound(r"Sounds/select.wav")
+                    return selected
 
         elif key in b'123456789':
             number = int(key.decode())
@@ -203,7 +214,7 @@ def build_options():
         "4 >> List Machine Components",
         "5 >> Refresh Windows Explorer",
         f"6 >> Volume ({volume}%)",
-        "7 >> Shutdown",
+        "7 >> Shutdown /s /f /t 0",
         "8 >> Exit"
     ]
 
@@ -264,6 +275,10 @@ def silent_menu(title, options):
                 selected -= 1
             elif key == b'P':
                 selected += 1
+            elif key == b'K':  # left arrow
+                return None
+            elif key == b'M':  # right arrow
+                return selected
 
         elif key in b'123456789':
             number = int(key.decode())
@@ -467,7 +482,7 @@ while True:
 
     # Refresh Windows Explorer
     elif choice == 5:
-        Utilities_pin.restart_explorer()
+        refresh_explorer()
 
     # Volume
     elif choice == 6:
@@ -475,7 +490,7 @@ while True:
 
     # Shutdown
     elif choice == 7:
-        Utilities_pin.shutdown()
+        shutdown()
 
     # Other options (Info, etc.)
     else:

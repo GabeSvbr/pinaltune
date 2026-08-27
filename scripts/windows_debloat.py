@@ -1,5 +1,29 @@
-import ctypes, os, subprocess, time, winreg, sys, shutil, urllib.request
-from Utilities_pin import bar, clear_console, get_option, confirmation, play_completion
+import ctypes, os, subprocess, time, winreg, sys, shutil, urllib.request, winsound
+
+_BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+SOUNDS_DIR = os.path.join(_BASE_DIR, "Sounds")
+
+
+def clear_console():
+    os.system("cls" if os.name == "nt" else "clear")
+
+
+def bar():
+    print("\033[1m#========================================================#\033[0m")
+
+
+def confirmation():
+    input("     \033[32mcontinue...\033[0m")
+
+
+def play_completion():
+    path = os.path.join(SOUNDS_DIR, "completion.wav")
+    if not os.path.exists(path):
+        return
+    try:
+        winsound.PlaySound(path, winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NODEFAULT)
+    except Exception:
+        pass
 
 
 #   CUSTOM WINDOWS SETUP (Commercial and Private)

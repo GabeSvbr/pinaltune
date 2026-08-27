@@ -2,13 +2,35 @@ import os
 import sys
 import shutil
 import subprocess
-
-from Utilities_pin import bar, clear_console, confirmation, play_completion
+import winsound
 
 # The 'ps1' folder sits next to main.py (one level above 'scripts'),
 # or inside the packaged .exe when frozen with PyInstaller.
 _BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ANI_CLI_PS1 = os.path.join(_BASE_DIR, "ps1", "ani-cli.ps1")
+SOUNDS_DIR = os.path.join(_BASE_DIR, "Sounds")
+
+
+def clear_console():
+    os.system("cls" if os.name == "nt" else "clear")
+
+
+def bar():
+    print("\033[1m#========================================================#\033[0m")
+
+
+def confirmation():
+    input("     \033[32mcontinue...\033[0m")
+
+
+def play_completion():
+    path = os.path.join(SOUNDS_DIR, "completion.wav")
+    if not os.path.exists(path):
+        return
+    try:
+        winsound.PlaySound(path, winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NODEFAULT)
+    except Exception:
+        pass
 
 
 def run_ani_cli():
