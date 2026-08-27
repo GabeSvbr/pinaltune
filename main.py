@@ -1,4 +1,4 @@
-import os, time, msvcrt, winsound, subprocess, sys, ctypes
+import os, time, msvcrt, winsound, subprocess, sys, ctypes, shutil
 
 version = "2.1"
 
@@ -387,16 +387,59 @@ def update():
     confirmation()
 
 def get_info():
-
     clear_console()
     print("Loading...")
     time.sleep(0.8)
-
-
-    play_sound("Sounds\completion.wav")
+    play_sound("Sounds\\completion.wav")
     clear_console()
-    print("[1;38;2;124;77;255m                  --- FASTFETCH ---                          [0m")
+
+    print("\033[1;38;2;124;77;255m --- FASTFETCH --- \033[0m")
     bar()
+
+    # Checks if fastfetch is available in PATH
+    if shutil.which("fastfetch") is None:
+        print("\033[1;33m[info] Fastfetch not found. Installing automatically...\033[0m")
+        try:
+            install = subprocess.run(
+                ["winget", "install", "-e", "--id", "Fastfetch-cli.Fastfetch",
+                 "--silent", "--accept-source-agreements", "--accept-package-agreements"],
+                capture_output=True,
+                text=True,
+                shell=False
+            )
+            if install.returncode == 0:
+                print("\033[1;92m[ok] Fastfetch installed successfully.\033[0m")
+            else:
+                print("\033[1;31m[error] Failed to install Fastfetch automatically.\033[0m")
+                if install.stderr:
+                    print(install.stderr)
+                bar()
+                confirmation()
+                return
+        except FileNotFoundError:
+            print("\033[1;31m[error] Winget is not available on this system.\033[0m")
+            print("Install winget or Fastfetch manually to continue.")
+            bar()
+            confirmation()
+            return
+
+        # Reloads PATH inside this same process/session so the newly
+        # installed binary can be found without restarting the app
+        os.environ["PATH"] = (
+            subprocess.run(
+                ["powershell", "-NoProfile", "-Command",
+                 "[System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + "
+                 "[System.Environment]::GetEnvironmentVariable('Path','User')"],
+                capture_output=True, text=True
+            ).stdout.strip()
+        )
+
+        if shutil.which("fastfetch") is None:
+            print("\033[1;31m[warning] Fastfetch was installed but isn't visible in PATH yet.\033[0m")
+            print("You may need to restart Pinaltune for it to be detected.")
+            bar()
+            confirmation()
+            return
 
     try:
         result = subprocess.run(
@@ -409,18 +452,14 @@ def get_info():
             text=True,
             shell=False
         )
-
         if result.returncode == 0:
             print(result.stdout)
         else:
-            print("[1;31m[error] Fastfetch could not be executed.[0m")
-            print("Make sure Fastfetch is installed and available in PATH.")
+            print("\033[1;31m[error] Fastfetch could not be executed.\033[0m")
             if result.stderr:
                 print(result.stderr)
     except FileNotFoundError:
-        print("[1;31m[error] Fastfetch is not installed or is not in PATH.[0m")
-        print("[1;33mInstall it with:[0m")
-        print("    winget install fastfetch")
+        print("\033[1;31m[error] Fastfetch is not installed or is not in PATH.\033[0m")
 
     bar()
     confirmation()
