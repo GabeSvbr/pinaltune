@@ -327,10 +327,6 @@ def setup_menu_loop():
             test_sounds_menu()
             continue
 
-        clear_console()
-        print(f"You chose: {setup_options[choice - 1]}")
-        confirmation()
-
 
 def test_sounds_menu():
     options = [f"{i} >> {name}" for i, name in enumerate(sound_files, 1)]
@@ -586,11 +582,4 @@ while True:
     elif choice == 7:
         shutdown()
 
-    # Other options (Info, etc.)
-    else:
 
-        clear_console()
-
-        print(f"You chose: {build_options()[choice - 1]}")
-
-        confirmation()

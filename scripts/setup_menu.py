@@ -110,9 +110,6 @@ def create_shortcut():
 
     print(f"\033[1;92m[ok]\033[0m .bat created at: {bat_path}")
 
-    desktop = os.path.join(os.path.expanduser("~"), "Desktop")
-    lnk_path = os.path.join(desktop, "Pinalto's WMan.lnk")
-
     # Shortcut icon, located relative to the project root (no hardcoded PC path)
     icon_path = os.path.join(root, "Sounds", "icon.ico")
 
@@ -120,13 +117,20 @@ def create_shortcut():
     if not icon_line:
         print(f"\033[33m[warning]\033[0m icon.ico not found at: {icon_path} (shortcut will be created without a custom icon)")
 
+    # NOTE: we no longer build the Desktop path in Python (os.path.expanduser("~") + "Desktop"),
+    # because on machines where the Desktop folder is redirected (OneDrive, group policy, etc.)
+    # that guess is wrong and the .lnk ends up somewhere else (e.g. next to the project).
+    # Instead we ask Windows itself for the real Desktop folder via WScript.Shell.SpecialFolders.
     ps_script = (
         '$W = New-Object -ComObject WScript.Shell; '
-        f'$s = $W.CreateShortcut("{lnk_path}"); '
+        '$desktop = $W.SpecialFolders("Desktop"); '
+        '$lnkPath = Join-Path $desktop "pinaltune.lnk"; '
+        f'$s = $W.CreateShortcut($lnkPath); '
         f'$s.TargetPath = "{bat_path}"; '
         f'$s.WorkingDirectory = "{root}"; '
         f'{icon_line}'
-        '$s.Save()'
+        '$s.Save(); '
+        'Write-Output $lnkPath'
     )
 
     result = subprocess.run(
@@ -135,6 +139,7 @@ def create_shortcut():
     )
 
     if result.returncode == 0:
-        print(f"\033[1;92m[ok]\033[0m Shortcut created on the Desktop: {lnk_path}")
+        real_lnk_path = result.stdout.strip()
+        print(f"\033[1;92m[ok]\033[0m Shortcut created on the Desktop: {real_lnk_path}")
     else:
         print(f"\033[31m[error] failed to create shortcut:\033[0m {result.stderr.strip()}")
