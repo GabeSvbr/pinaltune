@@ -367,24 +367,79 @@ def media_menu_loop():
         elif choice == 3:
             pinterest_downloader.pinterest_download()
 
-
 def update():
     t = time.time()
     clear_console()
     print("\n\033[1;38;2;124;77;255m                  --- Updating ---                          \033[0m")
     bar()
-    cmd = (
-        'winget upgrade --all --silent --accept-source-agreements --accept-package-agreements && '
-    )
+
+    # IDs do winget que você NÃO quer atualizar (bloatware da Microsoft)
+    blacklist = [
+        "Microsoft.Edge",
+        "Microsoft.EdgeWebView2Runtime",
+        "Microsoft.OneDrive",
+        "Microsoft.Teams",
+        "Microsoft.BingSearch",
+        "Microsoft.549981C3F5F10",  # Cortana
+        "Microsoft.GetHelp",
+        "Microsoft.Getstarted",
+    ]
+
     try:
-        subprocess.run(cmd)
-        print("[ok] update")
-    except subprocess.CalledProcessError:
-        print("[error] update")
+        # Lista pacotes com update disponível
+        result = subprocess.run(
+            ["winget", "upgrade", "--accept-source-agreements"],
+            capture_output=True, text=True, encoding="utf-8", errors="ignore"
+        )
+        lines = result.stdout.splitlines()
+
+        # Acha onde começa a tabela (linha de cabeçalho com "Id")
+        start = 0
+        for i, line in enumerate(lines):
+            if line.strip().startswith("Name") and "Id" in line:
+                start = i + 2  # pula cabeçalho e linha de traços
+                break
+
+        ids_to_update = []
+        for line in lines[start:]:
+            if not line.strip() or "upgrades available" in line.lower():
+                continue
+            parts = line.split()
+            if len(parts) < 2:
+                continue
+            # O Id geralmente é o segundo "bloco", mas para IDs com pontos costuma vir isolado
+            for p in parts:
+                if "." in p and not p.lower().endswith((".exe", ".msi")):
+                    pkg_id = p
+                    break
+            else:
+                continue
+
+            if pkg_id not in blacklist:
+                ids_to_update.append(pkg_id)
+
+        if not ids_to_update:
+            print("[ok] nada para atualizar (fora da blacklist)")
+        else:
+            for pkg_id in ids_to_update:
+                print(f"Atualizando: {pkg_id}")
+                r = subprocess.run(
+                    ["winget", "upgrade", "--id", pkg_id, "--silent",
+                     "--accept-source-agreements", "--accept-package-agreements"]
+                )
+                if r.returncode == 0:
+                    print(f"[ok] {pkg_id}")
+                else:
+                    print(f"[error] {pkg_id}")
+
+    except Exception as e:
+        print(f"[error] update: {e}")
+
     bar()
     print(f"\033[1;93mElapsed time: {time.time() - t:.4f}\033[0m")
     bar()
     confirmation()
+
 
 def get_info():
     clear_console()
