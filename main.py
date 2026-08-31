@@ -2,7 +2,7 @@ import os, time, msvcrt, winsound, subprocess, sys, ctypes, shutil
 
 version = "2.2"
 
-os.system(f"title Pinaltune v{version}")
+os.system(f"title PinalTune v{version}")
 
 # The 'scripts' folder sits next to this file (or inside the packaged .exe)
 _BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
@@ -369,70 +369,47 @@ def media_menu_loop():
 def update():
     t = time.time()
     clear_console()
+
     print("\n\033[1;38;2;124;77;255m                  --- Updating ---                          \033[0m")
     bar()
 
-    # IDs do winget que você NÃO quer atualizar (bloatware da Microsoft)
     blacklist = [
         "Microsoft.Edge",
         "Microsoft.EdgeWebView2Runtime",
         "Microsoft.OneDrive",
         "Microsoft.Teams",
         "Microsoft.BingSearch",
-        "Microsoft.549981C3F5F10",  # Cortana
+        "Microsoft.549981C3F5F10",
         "Microsoft.GetHelp",
         "Microsoft.Getstarted",
     ]
 
     try:
-        # Lista pacotes com update disponível
         result = subprocess.run(
-            ["winget", "upgrade", "--accept-source-agreements"],
-            capture_output=True, text=True, encoding="utf-8", errors="ignore"
+            ["winget", "upgrade", "--all",
+             "--accept-source-agreements",
+             "--accept-package-agreements"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="ignore"
         )
-        lines = result.stdout.splitlines()
 
-        # Acha onde começa a tabela (linha de cabeçalho com "Id")
-        start = 0
-        for i, line in enumerate(lines):
-            if line.strip().startswith("Name") and "Id" in line:
-                start = i + 2  # pula cabeçalho e linha de traços
-                break
+        output = result.stdout + result.stderr
 
-        ids_to_update = []
-        for line in lines[start:]:
-            if not line.strip() or "upgrades available" in line.lower():
-                continue
-            parts = line.split()
-            if len(parts) < 2:
-                continue
-            # O Id geralmente é o segundo "bloco", mas para IDs com pontos costuma vir isolado
-            for p in parts:
-                if "." in p and not p.lower().endswith((".exe", ".msi")):
-                    pkg_id = p
-                    break
-            else:
-                continue
-
-            if pkg_id not in blacklist:
-                ids_to_update.append(pkg_id)
-
-        if not ids_to_update:
-            print("[ok] nada para atualizar (fora da blacklist)")
+        if result.returncode == 0:
+            print("\n\033[1;92m[ok] Update done.\033[0m")
         else:
-            for pkg_id in ids_to_update:
-                print(f"Atualizando: {pkg_id}")
-                r = subprocess.run(
-                    ["winget", "upgrade", "--id", pkg_id, "--silent",
-                     "--accept-source-agreements", "--accept-package-agreements"]
-                )
-                if r.returncode == 0:
-                    print(f"[ok] {pkg_id}")
-                else:
-                    print(f"[error] {pkg_id}")
+            print("\n\033[1;91m[error] Some updates failed.\033[0m")
+
+        if output.strip():
+            print(output)
+
+    except FileNotFoundError:
+        print("\033[1;91m[error] winget not found.\033[0m")
 
     except Exception as e:
-        print(f"[error] update: {e}")
+        print(f"\033[1;91m[error] update: {e}\033[0m")
 
     bar()
     print(f"\033[1;93mElapsed time: {time.time() - t:.4f}\033[0m")

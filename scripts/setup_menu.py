@@ -108,7 +108,7 @@ def create_shortcut():
     ps_script = f"""
 $W = New-Object -ComObject WScript.Shell
 $desktop = $W.SpecialFolders("Desktop")
-$lnkPath = Join-Path $desktop "pinaltune.lnk"
+$lnkPath = Join-Path $desktop "Pinaltune.lnk"
 $s = $W.CreateShortcut($lnkPath)
 $s.TargetPath = {_ps_quote(target_path)}
 $s.Arguments = {_ps_quote(arguments)}
