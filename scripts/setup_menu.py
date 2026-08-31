@@ -18,16 +18,22 @@ def bar():
 
 def confirmation():
     input("     \033[32mcontinue...\033[0m")
+    play_sound("menu_back.wav")
 
 
-def play_completion():
-    path = os.path.join(SOUNDS_DIR, "completion.wav")
+def play_sound(filename):
+    """Play a sound file from the Sounds directory"""
+    path = os.path.join(SOUNDS_DIR, filename)
     if not os.path.exists(path):
         return
     try:
         winsound.PlaySound(path, winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NODEFAULT)
     except Exception:
         pass
+
+
+def play_completion():
+    play_sound("completion.wav")
 
 def install(package_id):
     print(f"\033[1;38;2;124;77;255m>>  Now Installing ➜  \033[1;38;2;255;105;180m({package_id})\033[0m")
@@ -70,76 +76,71 @@ def raphi_debloat():
 
 
 # =========================
-# DESKTOP SHORTCUT (.bat)
+# DESKTOP SHORTCUT
 # =========================
 
 def _project_root():
-    """Project root folder (one level above 'scripts')."""
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def _get_target():
-    """Figures out what the .bat should run: the .exe (if built with PyInstaller)
-    or main.py via python, if running from source.
-    Always uses python.exe (with a console) — the program uses msvcrt/input()
-    and needs a real console to work."""
-    if getattr(sys, "frozen", False):
-        return f'"{sys.executable}"', ""
-    root = _project_root()
-    main_py = os.path.join(root, "main.py")
-    return f'"{sys.executable}"', f'"{main_py}"'
+def _ps_quote(value):
+    return "'" + value.replace("'", "''") + "'"
 
 
 def create_shortcut():
     clear_console()
     bar()
-    print("\033[1;38;2;124;77;255m --> Create Desktop Shortcut\033[0m")
+    print("\033[1;38;2;124;77;255m --> Create Desktop Shortcut (Pinaltune v2.2)\033[0m")
     bar()
+    print()
 
     root = _project_root()
-    bat_path = os.path.join(root, "Pinalto_WMan.bat")
 
-    exe_cmd, arg = _get_target()
-    bat_content = f'@echo off\ncd /d "{root}"\n{exe_cmd} {arg}\n'
-    try:
-        with open(bat_path, "w", encoding="utf-8") as f:
-            f.write(bat_content)
-    except Exception as e:
-        print(f"\033[31m[error] could not create the .bat file: {e}\033[0m")
-        return
+    target_path = sys.executable
+    arguments = ""
 
-    print(f"\033[1;92m[ok]\033[0m .bat created at: {bat_path}")
+    if not getattr(sys, "frozen", False):
+        main_py = os.path.join(root, "main.py")
+        arguments = f'"{main_py}"'
 
-    # Shortcut icon, located relative to the project root (no hardcoded PC path)
     icon_path = os.path.join(root, "Sounds", "icon.ico")
 
-    icon_line = f'$s.IconLocation = "{icon_path}"; ' if os.path.isfile(icon_path) else ""
-    if not icon_line:
-        print(f"\033[33m[warning]\033[0m icon.ico not found at: {icon_path} (shortcut will be created without a custom icon)")
+    ps_script = f"""
+$W = New-Object -ComObject WScript.Shell
+$desktop = $W.SpecialFolders("Desktop")
+$lnkPath = Join-Path $desktop "pinaltune.lnk"
+$s = $W.CreateShortcut($lnkPath)
+$s.TargetPath = {_ps_quote(target_path)}
+$s.Arguments = {_ps_quote(arguments)}
+$s.WorkingDirectory = {_ps_quote(root)}
+"""
+    if os.path.isfile(icon_path):
+        ps_script += f"$s.IconLocation = {_ps_quote(icon_path)}\n"
 
-    # NOTE: we no longer build the Desktop path in Python (os.path.expanduser("~") + "Desktop"),
-    # because on machines where the Desktop folder is redirected (OneDrive, group policy, etc.)
-    # that guess is wrong and the .lnk ends up somewhere else (e.g. next to the project).
-    # Instead we ask Windows itself for the real Desktop folder via WScript.Shell.SpecialFolders.
-    ps_script = (
-        '$W = New-Object -ComObject WScript.Shell; '
-        '$desktop = $W.SpecialFolders("Desktop"); '
-        '$lnkPath = Join-Path $desktop "pinaltune.lnk"; '
-        f'$s = $W.CreateShortcut($lnkPath); '
-        f'$s.TargetPath = "{bat_path}"; '
-        f'$s.WorkingDirectory = "{root}"; '
-        f'{icon_line}'
-        '$s.Save(); '
-        'Write-Output $lnkPath'
-    )
+    ps_script += """
+$s.Description = "Pinaltune"
+$s.Save()
+Write-Output $lnkPath
+"""
 
-    result = subprocess.run(
-        ["powershell", "-NoProfile", "-Command", ps_script],
-        capture_output=True, text=True
-    )
+    try:
+        result = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", ps_script],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace"
+        )
 
-    if result.returncode == 0:
-        real_lnk_path = result.stdout.strip()
-        print(f"\033[1;92m[ok]\033[0m Shortcut created on the Desktop: {real_lnk_path}")
-    else:
-        print(f"\033[31m[error] failed to create shortcut:\033[0m {result.stderr.strip()}")
+        if result.returncode == 0:
+            print("\033[1;92m[ok]\033[0m Shortcut created on the Desktop:")
+            print(f"    {result.stdout.strip()}")
+            print()
+            print("\033[1;92m✓ Shortcut created successfully!\033[0m")
+        else:
+            print("\033[31m[error] failed to create shortcut:\033[0m")
+            print(f"    {result.stderr.strip()}")
+
+    except Exception as e:
+        print(f"\033[31m[error] failed to create shortcut: {e}\033[0m")
+

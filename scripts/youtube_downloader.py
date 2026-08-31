@@ -20,6 +20,7 @@ def bar():
 
 def confirmation():
     input("     \033[32mcontinue...\033[0m")
+    _play_sound_safe(os.path.join(SOUNDS_DIR, "menu_back.wav"))
 
 
 def _play_sound_safe(path):

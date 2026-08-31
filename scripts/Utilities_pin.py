@@ -90,6 +90,7 @@ def get_option():
 
 def confirmation():
     answer = input("     \033[32mcontinue...\033[0m")
+    play_sound("menu_back.wav")
 
 
 def valid():

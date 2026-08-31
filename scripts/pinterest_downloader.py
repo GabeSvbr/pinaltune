@@ -18,8 +18,20 @@ def bar():
     print("\033[1m#========================================================#\033[0m")
 
 
+def play_sound(filename):
+    """Play a sound file from the Sounds directory"""
+    path = os.path.join(SOUNDS_DIR, filename)
+    if not os.path.exists(path):
+        return
+    try:
+        winsound.PlaySound(path, winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NODEFAULT)
+    except Exception:
+        pass
+
+
 def confirmation():
     input("     \033[32mcontinue...\033[0m")
+    play_sound("menu_back.wav")
 
 
 def play_completion():

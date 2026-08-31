@@ -1,6 +1,6 @@
 import os, time, msvcrt, winsound, subprocess, sys, ctypes, shutil
 
-version = "2.1"
+version = "2.2"
 
 os.system(f"title Pinaltune v{version}")
 
@@ -37,7 +37,7 @@ def ensure_admin():
 
 def confirmation():
     answer = input("     \033[32mcontinue...\033[0m")
-    play_sound("Sounds\menu_back.wav")
+    play_sound("Sounds/menu_back.wav")
     
 
 ensure_admin()
@@ -49,7 +49,7 @@ def clear_console():
     os.system("cls" if os.name == "nt" else "clear")
 
 
-volume = 40  # default volume (%)
+volume = 30 # default volume (%)
 
 
 def resource_path(relative_path):
@@ -151,6 +151,8 @@ def menu(title, options):
                     print(f"        \033[1;38;2;255;0;0m➜ {option}\033[0m")
                 elif "Exit" in option:
                     print(f"        \033[1;38;2;255;0;0m➜ {option}\033[0m")
+                elif "Volume" in option or "Info" in option:
+                    print(f"        \033[1;34m➜ {option}\033[0m")
                 else:
                     print(f"        \033[1;38;2;124;77;255m➜ {option}\033[0m")
             else:
@@ -201,7 +203,6 @@ def menu(title, options):
 
         selected = (selected - 1) % len(items) + 1
 
-
 # =========================
 # MENUS
 # =========================
@@ -214,8 +215,9 @@ def build_options():
         "4 >> List Machine Components",
         "5 >> Refresh Windows Explorer",
         f"6 >> Volume ({volume}%)",
-        "7 >> Shutdown /s /f /t 0",
-        "8 >> Exit"
+        "7 >> Info",
+        "8 >> Shutdown /s /f /t 0",
+        "9 >> Exit"
     ]
 
 
@@ -320,6 +322,7 @@ def setup_menu_loop():
             setup_menu.raphi_debloat()
         elif choice == 7:
             setup_menu.create_shortcut()
+            setup_menu.play_completion()
         elif choice == 8:
             ani_cli.run_ani_cli()
             continue
@@ -515,6 +518,23 @@ def get_info():
     bar()
     confirmation()
 
+def info():
+    clear_console()
+    print("\033[1;38;2;124;77;255m────────────────────────────────────\033[0m")
+    print("\033[1;38;2;124;77;255m           PINALTUNE 2.2\033[0m")
+    print("\033[1;34m      System Management Utility\033[0m")
+    print("\033[1;38;2;124;77;255m────────────────────────────────────\033[0m")
+    print()
+    print(" >>  Version: 2.2")
+    print(" >>  Platform: Windows")
+    print(" >>  Creator: pinalto")
+    print(" >>  Repo: https://github.com/GabeSvbr/pinaltune")
+    print(" >>  Languages: Python, PowerShell")
+    print()
+    print("\033[1;38;2;124;77;255m────────────────────────────────────\033[0m")
+    confirmation()
+
+
 def shutdown():
     clear_console()
     print("\033[1;38;2;255;0;0mShutting down the computer...\033[0m")
@@ -551,7 +571,7 @@ while True:
         break
 
     # Exit
-    if choice == 8:
+    if choice == 9:
         break
 
     # Update Windows
@@ -578,8 +598,12 @@ while True:
     elif choice == 6:
         adjust_volume()
 
-    # Shutdown
+    # Info
     elif choice == 7:
+        info()
+
+    # Shutdown
+    elif choice == 8:
         shutdown()
 
 
