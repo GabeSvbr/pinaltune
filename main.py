@@ -152,7 +152,7 @@ def menu(title, options):
                     print(f"        \033[1;38;2;255;0;0m➜ {option}\033[0m")
                 elif "Exit" in option:
                     print(f"        \033[1;38;2;255;0;0m➜ {option}\033[0m")
-                elif "Volume" in option or "Info" in option:
+                elif "Volume" in option or "Info" in option or "Dev Menu" in option:
                     print(f"        \033[1;34m➜ {option}\033[0m")
                 else:
                     print(f"        {theme.ansi()}➜ {option}\033[0m")
@@ -220,8 +220,9 @@ def build_options():
         "5 >> Refresh Windows Explorer",
         f"6 >> Volume ({volume}%)",
         "7 >> Info",
-        "8 >> Shutdown /s /f /t 0",
-        "9 >> Exit"
+        "8 >> Dev Menu",
+        "9 >> Shutdown /s /f /t 0",
+        "10 >> Exit"
     ]
 
 
@@ -233,9 +234,12 @@ setup_options = [
     "5 >> irm https://christitus.com/win | iex",
     "6 >> & ([scriptblock]::Create((irm https://debloat.raphi.re/)))",
     "7 >> Create Desktop Shortcut",
-    "8 >> Install/Manage ani-cli",
-    "9 >> Test Sounds",
-    "10 >> Change Menu Color"
+    "8 >> Install/Manage ani-cli"
+]
+
+dev_options = [
+    "1 >> Test Sounds",
+    "2 >> Change Menu Color"
 ]
 
 media_options = [
@@ -256,9 +260,8 @@ sound_files = [
 ]
 
 
-def silent_menu(title, options):
-    """Same navigation as menu(), but stays silent while moving the selection.
-    Enter returns the selected index (menu stays open); Esc/Backspace returns None."""
+def silent_menu(title, options, navigation_sounds=False):
+    """Menu with optional navigation sounds."""
     selected = 1
 
     while True:
@@ -280,22 +283,41 @@ def silent_menu(title, options):
             key = msvcrt.getch()
             if key == b'H':
                 selected -= 1
+                if navigation_sounds:
+                    play_sound(r"Sounds/menu_down_up.wav")
             elif key == b'P':
                 selected += 1
-            elif key == b'K':  # left arrow
+                if navigation_sounds:
+                    play_sound(r"Sounds/menu_down_up.wav")
+            elif key == b'K':
+                if navigation_sounds:
+                    play_sound(r"Sounds/menu_back.wav")
                 return None
-            elif key == b'M':  # right arrow
+            elif key == b'M':
+                if navigation_sounds:
+                    play_sound(r"Sounds/select.wav")
                 return selected
 
         elif key in b'123456789':
             number = int(key.decode())
             if number <= len(items):
                 selected = number
+                if navigation_sounds:
+                    play_sound(r"Sounds/menu_down_up.wav")
+
+        elif key == b'0' and len(items) >= 10:
+            selected = 10
+            if navigation_sounds:
+                play_sound(r"Sounds/menu_down_up.wav")
 
         elif key == b'\r':
+            if navigation_sounds:
+                play_sound(r"Sounds/select.wav")
             return selected
 
         elif key in (b'\x1b', b'\x08'):
+            if navigation_sounds:
+                play_sound(r"Sounds/menu_back.wav")
             return None
 
         selected = (selected - 1) % len(items) + 1
@@ -331,18 +353,27 @@ def setup_menu_loop():
         elif choice == 8:
             ani_cli.run_ani_cli()
             continue
-        elif choice == 9:
+
+
+def dev_menu_loop():
+    while True:
+        choice = menu(
+            "----< Dev Menu >----",
+            dev_options
+        )
+
+        if choice is None:
+            return
+        elif choice == 1:
             test_sounds_menu()
-            continue
-        elif choice == 10:
+        elif choice == 2:
             change_theme_menu()
-            continue
 
 
 def change_theme_menu():
     while True:
         options = [f"{i} >> {name}" for i, (name, _) in enumerate(theme.THEMES, 1)]
-        choice = silent_menu("----< Menu Color >----", options)
+        choice = silent_menu("----< Menu Color >----", options, navigation_sounds=True)
         if choice is None:
             return
         theme.set_theme_index(choice - 1)
@@ -604,8 +635,12 @@ while True:
     elif choice == 7:
         info()
 
-    # Shutdown
+    # Dev Menu
     elif choice == 8:
+        dev_menu_loop()
+
+    # Shutdown
+    elif choice == 9:
         shutdown()
 
 
