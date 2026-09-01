@@ -1,6 +1,6 @@
 import os, time, msvcrt, winsound, subprocess, sys, ctypes, shutil
 
-version = "2.2"
+version = "2.3"
 
 os.system(f"title PinalTune v{version}")
 
@@ -604,7 +604,7 @@ while True:
         break
 
     # Exit
-    if choice == 9:
+    if choice == 10:
         break
 
     # Update Windows
