@@ -43,6 +43,7 @@ def confirmation():
 ensure_admin()
 
 import windows_debloat, setup_menu, youtube_downloader, pinterest_downloader, ani_cli
+import theme
 
 
 def clear_console():
@@ -77,7 +78,7 @@ def adjust_volume_relative(delta):
 def adjust_volume():
     clear_console()
     bar()
-    print(f"\033[1;38;2;124;77;255m --> Current volume: {volume}%\033[0m")
+    print(f"{theme.ansi()} --> Current volume: {volume}%\033[0m")
     print(" \033[1;34mEnter the new volume (0-100) or ENTER to cancel:\033[0m")
     bar()
     entry = input("    Volume: ").strip()
@@ -105,11 +106,11 @@ def adjust_volume():
 
 
 def bar():
-    print("\033[1;38;2;124;77;255m" + "-" * 120 + "\033[0m")
+    print(theme.color("-" * 120))
 
 
 def intro():
-    print("\n\033[1;38;2;124;77;255m Pinalto's Manager  '\033[0m")
+    print("\n" + theme.color(" Pinalto's Manager  '"))
     for i in range(4):
         clear_console()
         bar()
@@ -143,7 +144,7 @@ def menu(title, options):
 
         clear_console()
 
-        print(f"\033[1;38;2;124;77;255m{title}\033[0m\n")
+        print(theme.color(title) + "\n")
 
         for i, option in enumerate(items, 1):
             if i == selected:
@@ -154,7 +155,7 @@ def menu(title, options):
                 elif "Volume" in option or "Info" in option:
                     print(f"        \033[1;34m➜ {option}\033[0m")
                 else:
-                    print(f"        \033[1;38;2;124;77;255m➜ {option}\033[0m")
+                    print(f"        {theme.ansi()}➜ {option}\033[0m")
             else:
                 print(f"    {option}")
 
@@ -193,6 +194,9 @@ def menu(title, options):
             if number <= len(items):
                 selected = number
 
+        elif key == b'0' and len(items) >= 10:
+            selected = 10
+
         elif key == b'\r':
             play_sound(r"Sounds/select.wav")
             return selected
@@ -230,7 +234,8 @@ setup_options = [
     "6 >> & ([scriptblock]::Create((irm https://debloat.raphi.re/)))",
     "7 >> Create Desktop Shortcut",
     "8 >> Install/Manage ani-cli",
-    "9 >> Test Sounds"
+    "9 >> Test Sounds",
+    "10 >> Change Menu Color"
 ]
 
 media_options = [
@@ -261,11 +266,11 @@ def silent_menu(title, options):
 
         clear_console()
 
-        print(f"\033[1;38;2;124;77;255m{title}\033[0m\n")
+        print(theme.color(title) + "\n")
 
         for i, option in enumerate(items, 1):
             if i == selected:
-                print(f"        \033[1;38;2;124;77;255m➜ {option}\033[0m")
+                print(f"        {theme.ansi()}➜ {option}\033[0m")
             else:
                 print(f"    {option}")
 
@@ -329,6 +334,26 @@ def setup_menu_loop():
         elif choice == 9:
             test_sounds_menu()
             continue
+        elif choice == 10:
+            change_theme_menu()
+            continue
+
+
+def change_theme_menu():
+    while True:
+        options = [f"{i} >> {name}" for i, (name, _) in enumerate(theme.THEMES, 1)]
+        choice = silent_menu("----< Menu Color >----", options)
+        if choice is None:
+            return
+        theme.set_theme_index(choice - 1)
+        clear_console()
+        print(theme.color("----< Menu Color >----"))
+        print()
+        print(theme.color(f">> Color changed to: {theme.THEMES[choice - 1][0]}"))
+        print()
+        print("     \033[32mcontinue...\033[0m")
+        msvcrt.getch()
+        return
 
 
 def test_sounds_menu():
@@ -370,7 +395,7 @@ def update():
     t = time.time()
     clear_console()
 
-    print("\n\033[1;38;2;124;77;255m                  --- Updating ---                          \033[0m")
+    print(theme.color("\n                  --- Updating ---                          "))
     bar()
 
     blacklist = [
@@ -424,7 +449,7 @@ def get_info():
     play_sound("Sounds\\completion.wav")
     clear_console()
 
-    print("\033[1;38;2;124;77;255m --- FASTFETCH --- \033[0m")
+    print(theme.color(" --- FASTFETCH --- "))
     bar()
 
     # Checks if fastfetch is available in PATH
@@ -497,10 +522,10 @@ def get_info():
 
 def info():
     clear_console()
-    print("\033[1;38;2;124;77;255m────────────────────────────────────\033[0m")
-    print("\033[1;38;2;124;77;255m           PINALTUNE 2.2\033[0m")
-    print("\033[1;34m      System Management Utility\033[0m")
-    print("\033[1;38;2;124;77;255m────────────────────────────────────\033[0m")
+    print(theme.color("────────────────────────────────────────────────────────────────────────"))
+    print(theme.color("                          PINALTUNE 2.2"))
+    print("\033[1;34m                       System Management Utility\033[0m")
+    print(theme.color("────────────────────────────────────────────────────────────────────────"))
     print()
     print(" >>  Version: 2.2")
     print(" >>  Platform: Windows")
@@ -508,7 +533,7 @@ def info():
     print(" >>  Repo: https://github.com/GabeSvbr/pinaltune")
     print(" >>  Languages: Python, PowerShell")
     print()
-    print("\033[1;38;2;124;77;255m────────────────────────────────────\033[0m")
+    print(theme.color("────────────────────────────────────────────────────────────────────────"))
     confirmation()
 
 

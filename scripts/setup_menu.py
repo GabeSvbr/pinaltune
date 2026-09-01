@@ -3,6 +3,7 @@ import subprocess
 import os
 import sys
 import winsound
+import theme
 
 _BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SOUNDS_DIR = os.path.join(_BASE_DIR, "Sounds")
@@ -36,7 +37,7 @@ def play_completion():
     play_sound("completion.wav")
 
 def install(package_id):
-    print(f"\033[1;38;2;124;77;255m>>  Now Installing ➜  \033[1;38;2;255;105;180m({package_id})\033[0m")
+    print(f"{theme.ansi()}>>  Now Installing ➜  \033[1;38;2;255;105;180m({package_id})\033[0m")
     subprocess.run([
         "winget", "install",
         "--accept-source-agreements",
@@ -90,7 +91,7 @@ def _ps_quote(value):
 def create_shortcut():
     clear_console()
     bar()
-    print("\033[1;38;2;124;77;255m --> Create Desktop Shortcut (Pinaltune v2.2)\033[0m")
+    print(theme.color(" --> Create Desktop Shortcut (Pinaltune v2.2)"))
     bar()
     print()
 
