@@ -1,6 +1,6 @@
 import os, time, msvcrt, winsound, subprocess, sys, ctypes, shutil
 
-version = "2.3"
+version = "2.2"
 
 os.system(f"title PinalTune v{version}")
 
