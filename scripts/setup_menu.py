@@ -1,9 +1,4 @@
-import windows_debloat
-import subprocess
-import os
-import sys
-import winsound
-import theme
+import windows_debloat, subprocess, os, sys,    winsound,   theme
 
 _BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SOUNDS_DIR = os.path.join(_BASE_DIR, "Sounds")
@@ -46,7 +41,7 @@ def install(package_id):
     ])
 
 def download_utilitaries():
-    install("Python.Python.3.13");  install("ImputNet.Helium");   install("Mozilla.Firefox")
+    install("Python.Python.3.14"); install("Microsoft.PowerShell");  install("ImputNet.Helium");   install("Mozilla.Firefox")
     install("RARLab.WinRAR");install("VideoLAN.VLC");
     install("Klocman.BulkCrapUninstaller");install("AntibodySoftware.WizTree")
     play_completion()
