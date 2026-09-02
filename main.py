@@ -1,6 +1,6 @@
 import os, time, msvcrt, winsound, subprocess, sys, ctypes, shutil
 
-version = "2.2"
+version = "2.3"
 
 os.system(f"title PinalTune v{version}")
 
@@ -40,7 +40,19 @@ def confirmation():
     play_sound("Sounds/menu_back.wav")
     
 
+def setup_taskbar():
+    """Configure Windows taskbar to recognize and display Pinaltune.
+    This allows the app to appear in the taskbar and be pinned."""
+    try:
+        # Set AppUserModelID so Windows recognizes the app
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("Pinaltune.Manager")
+    except Exception as e:
+        # Silent fail if not supported
+        pass
+
+
 ensure_admin()
+setup_taskbar()
 
 import windows_debloat, setup_menu, youtube_downloader, pinterest_downloader, ani_cli
 import theme
@@ -586,11 +598,11 @@ def get_info():
 def info():
     clear_console()
     print(theme.color("────────────────────────────────────────────────────────────────────────"))
-    print(theme.color("                          PINALTUNE 2.2"))
+    print(theme.color("                          PINALTUNE 2.3"))
     print("\033[1;34m                       System Management Utility\033[0m")
     print(theme.color("────────────────────────────────────────────────────────────────────────"))
     print()
-    print(" >>  Version: 2.2")
+    print(" >>  Version: 2.3")
     print(" >>  Platform: Windows")
     print(" >>  Creator: pinalto")
     print(" >>  Repo: https://github.com/GabeSvbr/pinaltune")

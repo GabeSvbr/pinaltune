@@ -86,7 +86,7 @@ def _ps_quote(value):
 def create_shortcut():
     clear_console()
     bar()
-    print(theme.color(" --> Create Desktop Shortcut (Pinaltune v2.2)"))
+    print(theme.color(" --> Create Desktop Shortcut (Pinaltune v2.3)"))
     bar()
     print()
 

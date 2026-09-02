@@ -8,7 +8,7 @@ import sys
 import subprocess
 import ctypes
 
-version = "2.2"
+version = "2.3"
 
 # The 'scripts' folder sits next to this file
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
