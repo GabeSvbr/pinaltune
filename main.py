@@ -485,19 +485,54 @@ def update():
     ]
 
     try:
-        result = subprocess.run(
+        # Mostrar mensagem de procurando pacotes com animação
+        print("\n")
+        for i in range(4):
+            clear_console()
+            print(theme.color("\n                  --- Updating ---                          "))
+            bar()
+            dots = "." * (i % 4)
+            print(f"{theme.ansi()}Searching for avalible packages{dots}\033[0m")
+            print()
+            time.sleep(0.3)
+        
+        clear_console()
+        print(theme.color("\n                  --- Updating ---                          "))
+        bar()
+        
+        # Iniciar o processo de atualização
+        process = subprocess.Popen(
             ["winget", "upgrade", "--all",
              "--accept-source-agreements",
              "--accept-package-agreements"],
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
             encoding="utf-8",
             errors="ignore"
         )
-
-        output = result.stdout + result.stderr
-
-        if result.returncode == 0:
+        
+        # Animação enquanto processa
+        animation_count = 0
+        while process.poll() is None:
+            clear_console()
+            print(theme.color("\n                  --- Updating ---                          "))
+            bar()
+            dots = "." * ((animation_count % 3) + 1)
+            print(f"{theme.ansi()}updating packages{dots}\033[0m")
+            print()
+            time.sleep(0.4)
+            animation_count += 1
+        
+        # Pegar output final
+        stdout, stderr = process.communicate()
+        output = stdout + stderr
+        
+        clear_console()
+        print(theme.color("\n                  --- Updating ---                          "))
+        bar()
+        
+        if process.returncode == 0:
             print("\n\033[1;92m[ok] Update done.\033[0m")
         else:
             print("\n\033[1;91m[error] Some updates failed.\033[0m")
