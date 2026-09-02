@@ -239,7 +239,8 @@ setup_options = [
 
 dev_options = [
     "1 >> Test Sounds",
-    "2 >> Change Menu Color"
+    "2 >> Change Menu Color",
+    "3 >> Copy Git Clone"
 ]
 
 media_options = [
@@ -368,6 +369,37 @@ def dev_menu_loop():
             test_sounds_menu()
         elif choice == 2:
             change_theme_menu()
+        elif choice == 3:
+            copy_git_clone()
+
+
+def copy_git_clone():
+    """Copy git clone command to clipboard."""
+    git_command = "git clone https://github.com/GabeSvbr/pinaltune"
+    
+    try:
+        # Use PowerShell to copy to clipboard
+        subprocess.run(
+            ["powershell", "-Command", f"'{git_command}' | Set-Clipboard"],
+            check=True,
+            capture_output=True
+        )
+        clear_console()
+        print(theme.color("----< Copy Git Clone >----"))
+        print()
+        print(f"    \033[1;92m✓ Copied to clipboard:\033[0m")
+        print(f"    {git_command}")
+        print()
+        print("     \033[32mcontinue...\033[0m")
+        msvcrt.getch()
+    except Exception as e:
+        clear_console()
+        print(theme.color("----< Copy Git Clone >----"))
+        print()
+        print(f"    \033[1;31m✗ Error copying to clipboard: {e}\033[0m")
+        print()
+        print("     \033[32mcontinue...\033[0m")
+        msvcrt.getch()
 
 
 def change_theme_menu():
