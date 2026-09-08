@@ -4,8 +4,6 @@ import shutil
 import subprocess
 import winsound
 
-# The 'ps1' folder sits next to main.py (one level above 'scripts'),
-# or inside the packaged .exe when frozen with PyInstaller.
 _BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ANI_CLI_PS1 = os.path.join(_BASE_DIR, "ps1", "ani-cli.ps1")
 SOUNDS_DIR = os.path.join(_BASE_DIR, "Sounds")
@@ -20,7 +18,6 @@ def bar():
 
 
 def play_sound(filename):
-    """Play a sound file from the Sounds directory"""
     path = os.path.join(SOUNDS_DIR, filename)
     if not os.path.exists(path):
         return
@@ -46,41 +43,52 @@ def play_completion():
 
 
 def run_ani_cli():
-    """Launches the ani-cli.ps1 installer/manager in an interactive PowerShell session."""
+    """
+    Abre ani-cli em um processo novo SEM privilégios de admin.
+    """
     clear_console()
     bar()
     print("\033[1;38;2;124;77;255m --> ani-cli\033[0m")
     bar()
-
+    
+    print(f"DEBUG: _BASE_DIR = {_BASE_DIR}")
+    print(f"DEBUG: ANI_CLI_PS1 = {ANI_CLI_PS1}")
+    print(f"DEBUG: Arquivo existe? {os.path.exists(ANI_CLI_PS1)}")
+    
     if not os.path.exists(ANI_CLI_PS1):
         print(f"\033[31m[error] script not found: {ANI_CLI_PS1}\033[0m")
         confirmation()
         return
 
     try:
-        subprocess.run(
-            [
-                "powershell",
-                "-NoProfile",
-                "-ExecutionPolicy", "Bypass",
-                "-File", ANI_CLI_PS1,
-            ],
-            check=False,
+        # Abre em novo processo/console sem herdar admin
+        ps_command = f'powershell -NoProfile -ExecutionPolicy Bypass -File "{ANI_CLI_PS1}"'
+        print(f"DEBUG: Comando = {ps_command}")
+        
+        subprocess.Popen(
+            ps_command,
+            shell=True,
+            creationflags=subprocess.CREATE_NEW_CONSOLE
         )
+        
+        print("\033[1;92m[ok] ani-cli aberto em janela separada (sem privilégios admin).\033[0m")
+        print("DEBUG: Processo iniciado com sucesso")
         play_completion()
-    except FileNotFoundError:
-        print("\033[31m[error] PowerShell not found on this system.\033[0m")
+        
+    except FileNotFoundError as e:
+        print(f"\033[31m[error] PowerShell not found: {e}\033[0m")
     except Exception as e:
-        print(f"\033[31m[error] failed to run ani-cli.ps1: {e}\033[0m")
+        print(f"\033[31m[error] failed: {e}\033[0m")
+        print(f"DEBUG: Exception type = {type(e)}")
+        import traceback
+        traceback.print_exc()
 
     bar()
     confirmation()
 
 
 def open_ani_cli():
-    """Clears the console and runs the 'ani-cli' command directly, as if the
-    user had typed it themselves. If the command isn't installed, tells the
-    user to install it from the Setup menu instead."""
+    """Executa ani-cli se já estiver instalado."""
     clear_console()
 
     if shutil.which("ani-cli") is None:

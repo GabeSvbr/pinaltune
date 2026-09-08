@@ -62,7 +62,7 @@ def clear_console():
     os.system("cls" if os.name == "nt" else "clear")
 
 
-volume = 30 # default volume (%)
+volume = 20 # default volume (%)
 
 
 def resource_path(relative_path):
@@ -466,6 +466,82 @@ def media_menu_loop():
         elif choice == 3:
             pinterest_downloader.pinterest_download()
 
+def check_and_install_winget():
+    """Verifica se winget está instalado, caso contrário tenta instalar automaticamente."""
+    try:
+        # Tenta chamar winget para verificar se está disponível
+        subprocess.run(
+            ["winget", "--version"],
+            capture_output=True,
+            timeout=5
+        )
+        return True  # winget já está instalado
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    
+    # winget não encontrado, tentar instalar
+    clear_console()
+    print(theme.color("\n                  --- Winget Not Found ---                   "))
+    bar()
+    print("\n\033[1;33m[info] Windows Package Manager (winget) not detected.\033[0m")
+    print("\033[1;33m[info] Attempting automatic installation...\033[0m\n")
+    
+    try:
+        # Tenta instalar via Microsoft Store (método mais confiável)
+        print("\033[1;34m[installing] Downloading from Microsoft Store...\033[0m\n")
+        
+        # Usando PowerShell para instalar o App Installer (que contém winget)
+        ps_command = (
+            "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force; "
+            "Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe"
+        )
+        
+        result = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", ps_command],
+            capture_output=True,
+            text=True,
+            timeout=120
+        )
+        
+        # Aguarda um pouco e recarrega PATH
+        time.sleep(2)
+        
+        # Recarrega variáveis de ambiente
+        os.environ["PATH"] = (
+            subprocess.run(
+                ["powershell", "-NoProfile", "-Command",
+                 "[System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + "
+                 "[System.Environment]::GetEnvironmentVariable('Path','User')"],
+                capture_output=True, text=True,
+                timeout=10
+            ).stdout.strip()
+        )
+        
+        # Verifica novamente
+        try:
+            subprocess.run(
+                ["winget", "--version"],
+                capture_output=True,
+                timeout=5
+            )
+            print("\n\033[1;92m[ok] Winget installed successfully!\033[0m\n")
+            bar()
+            time.sleep(1.5)
+            return True
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            print("\n\033[1;33m[warning] Winget installation may require manual setup.\033[0m")
+            print("\033[1;33mVisit: https://github.com/microsoft/winget-cli/releases\033[0m\n")
+            bar()
+            time.sleep(2)
+            return False
+            
+    except Exception as e:
+        print(f"\n\033[1;91m[error] Winget installation failed: {e}\033[0m\n")
+        bar()
+        time.sleep(1.5)
+        return False
+
+
 def update():
     t = time.time()
     clear_console()
@@ -485,6 +561,16 @@ def update():
     ]
 
     try:
+        # Verificar e instalar winget se necessário
+        if not check_and_install_winget():
+            clear_console()
+            print(theme.color("\n                  --- Updating ---                          "))
+            bar()
+            print("\033[1;31m[error] Winget is required to update packages.\033[0m")
+            bar()
+            confirmation()
+            return
+
         # Mostrar mensagem de procurando pacotes com animação
         print("\n")
         for i in range(4):
@@ -492,41 +578,40 @@ def update():
             print(theme.color("\n                  --- Updating ---                          "))
             bar()
             dots = "." * (i % 4)
-            print(f"{theme.ansi()}Searching for avalible packages{dots}\033[0m")
+            print(f"{theme.ansi()}Searching for available packages{dots}\033[0m")
             print()
             time.sleep(0.3)
         
         clear_console()
         print(theme.color("\n                  --- Updating ---                          "))
         bar()
+        print(f"{theme.ansi()}Starting update process...\033[0m\n")
         
-        # Iniciar o processo de atualização
+        # Iniciar o processo de atualização COM a barra de progresso visível
+        # Usando shell=True para que o winget mostre sua barra de progresso nativa
         process = subprocess.Popen(
-            ["winget", "upgrade", "--all",
-             "--accept-source-agreements",
-             "--accept-package-agreements"],
+            'winget upgrade --all --accept-source-agreements --accept-package-agreements',
+            shell=True,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
             encoding="utf-8",
-            errors="ignore"
+            errors="replace",
+            bufsize=1  # Line buffered
         )
         
-        # Animação enquanto processa
-        animation_count = 0
-        while process.poll() is None:
-            clear_console()
-            print(theme.color("\n                  --- Updating ---                          "))
-            bar()
-            dots = "." * ((animation_count % 3) + 1)
-            print(f"{theme.ansi()}updating packages{dots}\033[0m")
-            print()
-            time.sleep(0.4)
-            animation_count += 1
+        # Ler output em tempo real e exibir
+        output_lines = []
+        try:
+            for line in process.stdout:
+                print(line.rstrip())  # Exibir cada linha do winget
+                output_lines.append(line)
+        except:
+            pass
         
-        # Pegar output final
-        stdout, stderr = process.communicate()
-        output = stdout + stderr
+        # Aguardar conclusão
+        process.wait()
+        output = "".join(output_lines)
         
         clear_console()
         print(theme.color("\n                  --- Updating ---                          "))
@@ -535,13 +620,10 @@ def update():
         if process.returncode == 0:
             print("\n\033[1;92m[ok] Update done.\033[0m")
         else:
-            print("\n\033[1;91m[error] Some updates failed.\033[0m")
-
-        if output.strip():
-            print(output)
+            print("\n\033[1;91m[error] Some updates failed or completed with warnings.\033[0m")
 
     except FileNotFoundError:
-        print("\033[1;91m[error] winget not found.\033[0m")
+        print("\033[1;91m[error] winget not found and could not be installed.\033[0m")
 
     except Exception as e:
         print(f"\033[1;91m[error] update: {e}\033[0m")
@@ -721,5 +803,3 @@ while True:
     # Shutdown
     elif choice == 9:
         shutdown()
-
-
